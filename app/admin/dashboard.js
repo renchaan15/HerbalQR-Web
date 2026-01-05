@@ -1,27 +1,37 @@
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useState } from 'react';
+import { 
+  View, 
+  Text, 
+  FlatList, 
+  TouchableOpacity, 
+  Image, 
+  StyleSheet, 
+  Alert, 
+  TextInput, 
+  StatusBar, 
+  ActivityIndicator, 
+  Platform // <--- Sudah ditambahkan dan DIPAKAI di bawah
+} from 'react-native';
 import { useRouter } from 'expo-router';
+import { collection, onSnapshot, orderBy, query, deleteDoc, doc } from 'firebase/firestore';
+import { auth, db } from '../../config/firebase';
 import { signOut } from 'firebase/auth';
-import { collection, deleteDoc, doc, onSnapshot, orderBy, query } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import QRModal from '../../components/QRModal';
-import { auth, db } from '../../config/firebase';
-import { COLORS } from '../../constants/theme';
 
 export default function Dashboard() {
   const router = useRouter();
   const [plants, setPlants] = useState([]);
-  const [filteredPlants, setFilteredPlants] = useState([]); // Untuk Search
+  const [filteredPlants, setFilteredPlants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  // State Modal QR
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedPlant, setSelectedPlant] = useState({ id: '', name: '' });
 
-  // 1. Ambil Data Realtime
   useEffect(() => {
     const q = query(collection(db, "plants"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -36,14 +46,12 @@ export default function Dashboard() {
     return () => unsubscribe();
   }, []);
 
-  // 2. Fungsi Search
   const handleSearch = (text) => {
     setSearch(text);
     if (text) {
       const newData = plants.filter(item => {
         const itemData = item.name ? item.name.toUpperCase() : ''.toUpperCase();
-        const textData = text.toUpperCase();
-        return itemData.indexOf(textData) > -1;
+        return itemData.indexOf(text.toUpperCase()) > -1;
       });
       setFilteredPlants(newData);
     } else {
@@ -51,36 +59,37 @@ export default function Dashboard() {
     }
   };
 
-const handleLogout = async () => {
-    // --- LOGIKA KHUSUS WEB ---
+  // --- PERBAIKAN LOGOUT (WEB COMPATIBLE) ---
+  const handleLogout = () => {
     if (Platform.OS === 'web') {
-      const confirmLogout = window.confirm("Yakin ingin keluar dari Dashboard?");
-      if (confirmLogout) {
-        await signOut(auth);
-        router.replace('/admin/login');
+      const confirm = window.confirm("Yakin ingin keluar dari Dashboard?");
+      if (confirm) {
+        signOut(auth).then(() => router.replace('/admin/login'));
       }
-    } 
-    // --- LOGIKA KHUSUS HP (NATIVE) ---
-    else {
+    } else {
       Alert.alert("Konfirmasi", "Yakin ingin keluar dari Dashboard?", [
         { text: "Batal", style: "cancel" },
-        { 
-          text: "Keluar", 
-          style: "destructive", 
-          onPress: async () => {
+        { text: "Keluar", style: "destructive", onPress: async () => {
             await signOut(auth);
             router.replace('/admin/login');
-          }
-        }
+          }}
       ]);
     }
   };
 
   const handleDelete = (id, name) => {
-    Alert.alert("Hapus Data", `Yakin ingin menghapus "${name}"?`, [
-      { text: "Batal", style: "cancel" },
-      { text: "Hapus", style: "destructive", onPress: async () => await deleteDoc(doc(db, "plants", id)) }
-    ]);
+    // --- PERBAIKAN DELETE (WEB COMPATIBLE) ---
+    if (Platform.OS === 'web') {
+      const confirm = window.confirm(`Yakin ingin menghapus "${name}"?`);
+      if (confirm) {
+        deleteDoc(doc(db, "plants", id));
+      }
+    } else {
+      Alert.alert("Hapus Data", `Yakin ingin menghapus "${name}"?`, [
+        { text: "Batal", style: "cancel" },
+        { text: "Hapus", style: "destructive", onPress: async () => await deleteDoc(doc(db, "plants", id)) }
+      ]);
+    }
   };
 
   const handleShowQR = (item) => {
@@ -88,11 +97,10 @@ const handleLogout = async () => {
     setModalVisible(true);
   };
 
-  // --- KOMPONEN HEADER MEWAH ---
   const renderHeader = () => (
     <View style={styles.headerContainer}>
       <LinearGradient
-        colors={[COLORS.primary, '#2E4C2E']} // Gradasi Hijau Mewah
+        colors={[COLORS.primary, '#2E4C2E']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.headerGradient}
@@ -108,7 +116,6 @@ const handleLogout = async () => {
             </TouchableOpacity>
           </View>
 
-          {/* Statistik Card Kecil */}
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>{plants.length}</Text>
@@ -123,7 +130,6 @@ const handleLogout = async () => {
         </SafeAreaView>
       </LinearGradient>
 
-      {/* Search Bar Floating */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
           <Ionicons name="search" size={20} color="#999" />
@@ -143,7 +149,6 @@ const handleLogout = async () => {
     </View>
   );
 
-  // --- ITEM LIST CARD ---
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <View style={styles.cardInner}>
@@ -153,26 +158,23 @@ const handleLogout = async () => {
           <Text style={styles.cardDesc} numberOfLines={2}>{item.description}</Text>
           
           <View style={styles.actionRow}>
-    {/* Tombol QR */}
-    <TouchableOpacity style={styles.actionBtn} onPress={() => handleShowQR(item)}>
-        <MaterialIcons name="qr-code" size={16} color={COLORS.primary} />
-        <Text style={styles.actionText}>QR</Text>
-    </TouchableOpacity>
-    
-    {/* TOMBOL EDIT BARU */}
-    <TouchableOpacity 
-        style={[styles.actionBtn, { backgroundColor: '#E3F2FD', marginLeft: 8 }]} 
-        onPress={() => router.push(`/admin/edit/${item.id}`)}
-    >
-        <MaterialIcons name="edit" size={16} color="#1976D2" />
-        <Text style={[styles.actionText, { color: '#1976D2' }]}>Ubah</Text>
-    </TouchableOpacity>
-    
-    {/* Tombol Hapus */}
-    <TouchableOpacity style={[styles.actionBtn, styles.deleteBtn, { marginLeft: 8 }]} onPress={() => handleDelete(item.id, item.name)}>
-        <MaterialIcons name="delete-outline" size={18} color={COLORS.error} />
-    </TouchableOpacity>
-</View>
+            <TouchableOpacity style={styles.actionBtn} onPress={() => handleShowQR(item)}>
+              <MaterialIcons name="qr-code" size={16} color={COLORS.primary} />
+              <Text style={styles.actionText}>QR</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+                style={[styles.actionBtn, { backgroundColor: '#E3F2FD', marginLeft: 8 }]} 
+                onPress={() => router.push(`/admin/edit/${item.id}`)}
+            >
+                <MaterialIcons name="edit" size={16} color="#1976D2" />
+                <Text style={[styles.actionText, { color: '#1976D2' }]}>Ubah</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={[styles.actionBtn, styles.deleteBtn, { marginLeft: 8 }]} onPress={() => handleDelete(item.id, item.name)}>
+              <MaterialIcons name="delete-outline" size={18} color={COLORS.error} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </View>
@@ -182,7 +184,6 @@ const handleLogout = async () => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       
-      {/* List Data dengan Header Gabungan */}
       <FlatList
         data={filteredPlants}
         keyExtractor={item => item.id}
@@ -206,7 +207,6 @@ const handleLogout = async () => {
         </View>
       )}
 
-      {/* FAB Modern */}
       <TouchableOpacity 
         style={styles.fab} 
         onPress={() => router.push('/admin/add')}
@@ -220,7 +220,6 @@ const handleLogout = async () => {
         </LinearGradient>
       </TouchableOpacity>
 
-      {/* Modal QR */}
       <QRModal 
         visible={modalVisible} 
         onClose={() => setModalVisible(false)}
@@ -234,9 +233,8 @@ const handleLogout = async () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F5F2', // Background abu sangat muda (Clean)
+    backgroundColor: '#F2F5F2',
   },
-  // Header Styles
   headerContainer: {
     marginBottom: 20,
   },
@@ -293,10 +291,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.3)',
     marginHorizontal: 20,
   },
-  // Search Styles
   searchContainer: {
     marginHorizontal: 20,
-    marginTop: -25, // Overlap ke atas header
+    marginTop: -25,
   },
   searchBar: {
     backgroundColor: 'white',
@@ -316,7 +313,6 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     color: COLORS.textTitle,
   },
-  // Card Styles
   card: {
     marginHorizontal: 20,
     marginBottom: 15,
@@ -378,7 +374,6 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     marginLeft: 4,
   },
-  // Loading & Empty
   loadingOverlay: {
     position: 'absolute',
     top: 200,
@@ -394,7 +389,6 @@ const styles = StyleSheet.create({
     color: '#999',
     marginTop: 10,
   },
-  // FAB Styles
   fab: {
     position: 'absolute',
     bottom: 30,

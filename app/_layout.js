@@ -22,7 +22,7 @@ export default function Layout() {
         >
           {/* Definisi Screen */}
           <Stack.Screen name="index" options={{ headerShown: false }} /> 
-          <Stack.Screen name="admin/login" options={{ title: 'Login Admin' }} />
+          <Stack.Screen name="admin/login" options={{ headerShown: false }} />
           
           {/* Halaman Admin */}
           <Stack.Screen name="admin/dashboard" options={{ headerShown: false }} />

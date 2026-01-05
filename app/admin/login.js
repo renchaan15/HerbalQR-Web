@@ -1,11 +1,23 @@
+import React, { useState } from 'react';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  StyleSheet, 
+  Alert, 
+  ActivityIndicator, 
+  Platform, 
+  KeyboardAvoidingView, 
+  ScrollView,
+  Image 
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Input from '../../components/Input';
-import { auth } from '../../config/firebase'; // Pastikan path ini benar sesuai struktur folder
+import { auth } from '../../config/firebase'; 
 import { COLORS, SHADOWS, SIZES } from '../../constants/theme';
+import Input from '../../components/Input';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function Login() {
   const router = useRouter();
@@ -15,7 +27,6 @@ export default function Login() {
   const [error, setError] = useState('');
 
   const handleLogin = async () => {
-    // Validasi sederhana
     if (!email || !password) {
       setError('Harap isi email dan password.');
       return;
@@ -26,11 +37,9 @@ export default function Login() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // Jika sukses, arahkan ke Dashboard
       router.replace('/admin/dashboard'); 
     } catch (err) {
       console.log(err);
-      // Custom pesan error agar lebih mudah dibaca
       let msg = 'Terjadi kesalahan pada login.';
       if (err.code === 'auth/invalid-email') msg = 'Format email salah.';
       if (err.code === 'auth/user-not-found') msg = 'User tidak ditemukan.';
@@ -38,110 +47,174 @@ export default function Login() {
       if (err.code === 'auth/invalid-credential') msg = 'Email atau password salah.';
       
       setError(msg);
-      // Tampilkan alert juga untuk mobile
-      Alert.alert('Login Gagal', msg);
+
+      // Handle Alert Web vs Native
+      if (Platform.OS === 'web') {
+        alert(msg);
+      } else {
+        Alert.alert('Login Gagal', msg);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Admin Login</Text>
-        <Text style={styles.subtitle}>Masuk untuk mengelola data tanaman.</Text>
-
-        <View style={styles.form}>
-          <Input
-            label="Email Address"
-            placeholder="Contoh: admin@herbal.com"
-            value={email}
-            onChangeText={text => setEmail(text)}
-            error={error && !email ? 'Email wajib diisi' : null}
-          />
+    <View style={styles.container}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           
-          <Input
-            label="Password"
-            placeholder="Masukkan password"
-            password
-            value={password}
-            onChangeText={text => setPassword(text)}
-            error={error} // Tampilkan error global di bawah field password juga
-          />
+          {/* --- HEADER SECTION --- */}
+          <View style={styles.header}>
+            <View style={styles.iconCircle}>
+              <MaterialIcons name="security" size={40} color={COLORS.primary} />
+            </View>
+            <Text style={styles.title}>Admin Portal</Text>
+            <Text style={styles.subtitle}>Masuk untuk mengelola data tanaman herbal</Text>
+          </View>
 
-          <TouchableOpacity 
-            style={styles.button} 
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={COLORS.white} />
-            ) : (
-              <Text style={styles.buttonText}>Masuk Dashboard</Text>
-            )}
-          </TouchableOpacity>
-          
-          {/* Tombol Back to Home (Opsional) */}
+          {/* --- FORM SECTION --- */}
+          <View style={styles.formCard}>
+            <Input
+              label="Email Address"
+              placeholder="admin@herbal.com"
+              value={email}
+              onChangeText={text => setEmail(text)}
+              error={error && !email ? 'Email wajib diisi' : null}
+            />
+            
+            <Input
+              label="Password"
+              placeholder="Masukkan password"
+              password
+              value={password}
+              onChangeText={text => setPassword(text)}
+              error={error} 
+            />
+
+            {/* Tombol Login Gradient */}
+            <TouchableOpacity 
+              style={styles.loginButtonWrapper} 
+              onPress={handleLogin}
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={[COLORS.secondary, COLORS.primary]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.gradientButton}
+              >
+                {loading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text style={styles.loginButtonText}>MASUK DASHBOARD</Text>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+
+          {/* --- FOOTER SECTION --- */}
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <Text style={styles.backButtonText}>Kembali ke Beranda</Text>
+            <Ionicons name="arrow-back" size={20} color={COLORS.textBody} />
+            <Text style={styles.backButtonText}>Kembali ke Halaman Utama</Text>
           </TouchableOpacity>
-        </View>
-      </View>
-    </SafeAreaView>
+
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#F2F5F2', // Abu muda (konsisten dengan tema)
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
     padding: SIZES.large,
   },
-  content: {
-    maxWidth: 400,
-    width: '100%',
-    alignSelf: 'center',
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: 'bold',
-    color: COLORS.primary,
-    marginBottom: 5,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: COLORS.textBody,
+  
+  // HEADER STYLES
+  header: {
+    alignItems: 'center',
     marginBottom: 30,
   },
-  form: {
-    backgroundColor: COLORS.white,
-    padding: 20,
-    borderRadius: SIZES.radius,
-    ...SHADOWS.card,
-  },
-  button: {
-    height: 55,
-    backgroundColor: COLORS.primary,
-    borderRadius: SIZES.radius,
+  iconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'white',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
-    ...SHADOWS.ios,
+    marginBottom: 15,
+    ...SHADOWS.card,
+    elevation: 5,
   },
-  buttonText: {
-    color: COLORS.white,
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: COLORS.primary,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: COLORS.textBody,
+    textAlign: 'center',
+    maxWidth: '80%',
+  },
+
+  // FORM CARD STYLES
+  formCard: {
+    backgroundColor: 'white',
+    padding: 25,
+    borderRadius: 20,
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
+    ...SHADOWS.card,
+    elevation: 4,
+  },
+  
+  // BUTTON STYLES
+  loginButtonWrapper: {
+    marginTop: 20,
+    borderRadius: 12,
+    overflow: 'hidden',
+    ...SHADOWS.card,
+  },
+  gradientButton: {
+    height: 55,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loginButtonText: {
+    color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
+    letterSpacing: 1,
   },
+
+  // BACK BUTTON
   backButton: {
-    marginTop: 20,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 30,
+    gap: 8,
+    opacity: 0.8,
   },
   backButtonText: {
     color: COLORS.textBody,
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
