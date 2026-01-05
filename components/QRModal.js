@@ -5,7 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 const QRModal = ({ visible, onClose, plantId, plantName }) => {
   // URL Base (Sesuaikan nanti saat deploy)
-  const baseUrl = "https://herbal-project.vercel.app/plant/"; 
+  const baseUrl = "https://herbal-app-mobile.vercel.app/plant/"; 
   const fullUrl = `${baseUrl}${plantId}`;
 
   // URL API QR Code

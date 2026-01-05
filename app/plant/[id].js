@@ -7,7 +7,7 @@ import { ActivityIndicator, Dimensions, Image, Platform, ScrollView, StatusBar, 
 import { db } from '../../config/firebase';
 import { COLORS } from '../../constants/theme';
 
-const { width, height } = Dimensions.get('window');
+const { height } = Dimensions.get('window'); // Hapus 'width' karena tidak aman untuk Web Desktop
 
 export default function PlantDetail() {
   const { id } = useLocalSearchParams();
@@ -64,43 +64,37 @@ export default function PlantDetail() {
         {/* --- HEADER IMAGE FULL SCREEN --- */}
         <View style={styles.imageContainer}>
           <Image source={{ uri: plant.imageUrl }} style={styles.image} />
-          {/* Overlay Gradient Hitam di Bawah Gambar agar Transisi Halus */}
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.6)']}
             style={styles.imageOverlay}
           />
           
-          {/* Tombol Back Custom (Glassmorphism) */}
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
         </View>
 
-        {/* --- CONTENT CONTAINER (FLOATING SHEET) --- */}
+        {/* --- CONTENT CONTAINER --- */}
         <View style={styles.contentContainer}>
           
-          {/* Garis Indikator Swipe (Hiasan) */}
           <View style={styles.headerBar} />
           
-          {/* Judul & Kategori */}
           <View style={styles.titleSection}>
              <View style={styles.categoryBadge}>
                 <Text style={styles.categoryText}>HERBAL COLLECTION</Text>
              </View>
              <Text style={styles.title}>{plant.name}</Text>
-             {/* Karena DB tidak ada scientific name, kita hardcode atau pakai placeholder jika mau */}
-             {/* <Text style={styles.scientificName}>Scientific Name</Text> */}
           </View>
           
           <View style={styles.divider} />
 
-          {/* 1. DESCRIPTION */}
+          {/* DESCRIPTION */}
           <View style={styles.section}>
              <Text style={styles.sectionTitle}>Tentang Tanaman</Text>
              <Text style={styles.descriptionText}>{plant.description}</Text>
           </View>
 
-          {/* 2. KEY BENEFITS (Card Style) */}
+          {/* KEY BENEFITS */}
           <View style={styles.benefitCard}>
              <View style={styles.benefitHeader}>
                 <View style={styles.iconCircle}>
@@ -111,7 +105,7 @@ export default function PlantDetail() {
              <Text style={styles.benefitText}>{plant.benefit}</Text>
           </View>
 
-          {/* 3. ACTIVE COMPOUNDS (Grid Style Modern) */}
+          {/* ACTIVE COMPOUNDS (GRID FIXED) */}
           <View style={styles.section}>
             <View style={styles.sectionHeaderRow}>
               <MaterialIcons name="science" size={20} color={COLORS.primary} />
@@ -130,7 +124,6 @@ export default function PlantDetail() {
                   </View>
                 ))
               ) : (
-                // Fallback Layout
                 <View style={styles.emptyCompound}>
                    <Text style={{color: COLORS.textBody}}>{plant.content || "Data belum tersedia"}</Text>
                 </View>
@@ -138,12 +131,10 @@ export default function PlantDetail() {
             </View>
           </View>
           
-          {/* Footer Space */}
           <View style={{ height: 80 }} />
         </View>
       </ScrollView>
 
-      {/* Floating Action Button (Optional: Share/Save) */}
       <TouchableOpacity style={styles.fab}>
          <Ionicons name="heart-outline" size={28} color="white" />
       </TouchableOpacity>
@@ -154,7 +145,7 @@ export default function PlantDetail() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F2', // Abu sangat muda
+    backgroundColor: '#F2F2F2',
   },
   center: {
     flex: 1,
@@ -167,10 +158,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
   },
-  // --- HEADER IMAGE ---
+  // --- PERBAIKAN: Gunakan 100% agar pas di container ---
   imageContainer: {
-    width: width,
-    height: height * 0.45, // 45% tinggi layar
+    width: '100%', 
+    height: height * 0.45,
   },
   image: {
     width: '100%',
@@ -188,7 +179,7 @@ const styles = StyleSheet.create({
     left: 20,
     width: 40, 
     height: 40,
-    backgroundColor: 'rgba(0,0,0,0.3)', // Semi transparan
+    backgroundColor: 'rgba(0,0,0,0.3)',
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
@@ -196,18 +187,17 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.2)'
   },
   
-  // --- CONTENT SHEET ---
   contentContainer: {
     flex: 1,
     backgroundColor: COLORS.white,
-    marginTop: -40, // Overlap ke atas gambar
+    marginTop: -40,
     borderTopLeftRadius: 35,
     borderTopRightRadius: 35,
     paddingHorizontal: 25,
     paddingTop: 15,
     minHeight: height * 0.6,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: -5 }, // Shadow ke atas
+    shadowOffset: { width: 0, height: -5 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 10,
@@ -221,7 +211,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   
-  // --- TITLE SECTION ---
   titleSection: {
     marginBottom: 10,
   },
@@ -241,23 +230,15 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: '800', // Extra Bold
+    fontWeight: '800',
     color: '#1A1A1A',
     lineHeight: 34,
-  },
-  scientificName: {
-    fontSize: 16,
-    fontStyle: 'italic',
-    color: COLORS.textBody,
-    marginTop: 2,
   },
   divider: {
     height: 1,
     backgroundColor: '#F0F0F0',
     marginVertical: 20,
   },
-
-  // --- SECTIONS ---
   section: {
     marginBottom: 25,
   },
@@ -280,9 +261,8 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
 
-  // --- BENEFIT CARD (New Design) ---
   benefitCard: {
-    backgroundColor: '#F5F9F5', // Hijau sangat pudar
+    backgroundColor: '#F5F9F5',
     borderRadius: 16,
     padding: 20,
     marginBottom: 30,
@@ -312,14 +292,15 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 
-  // --- ACTIVE COMPOUNDS (Grid) ---
   compoundsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
   },
+  // --- PERBAIKAN GRID SYSTEM ---
   compoundCard: {
-    width: (width - 50 - 12) / 2, // 2 Kolom pas (Total width - padding - gap) / 2
+    // Width 47% agar muat 2 kolom (47% + 47% + gap = ~100%)
+    width: '47%', 
     backgroundColor: COLORS.white,
     borderRadius: 16,
     padding: 15,
@@ -355,7 +336,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // --- FAB ---
   fab: {
     position: 'absolute',
     bottom: 30,
